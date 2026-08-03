@@ -14,11 +14,10 @@ Responda de forma amigável, profissional e útil. Se perguntarem sobre serviço
 Seja sempre educado e acolhedor.
 `;
 
-// 📋 LISTA DE MODELOS - VERSÃO 2.0
+// 📋 LISTA DE MODELOS - ESTRATÉGIA DE COTA SEPARADA
 const MODELOS = [
-  "gemini-2.0-flash",    // ← Primeiro este (mais estável)
-  "gemini-2.5-flash",    // ← Depois este
-  "gemini-1.5-flash"     // ← Fallback
+  "gemini-2.0-flash",       // 🥇 1ª Opção: Principal, rápido e inteligente
+  "gemini-2.0-flash-lite"   // 🥈 2ª Opção (Fallback): Usa um "balde" de cota separado!
 ];
 module.exports = async (req, res) => {
   // CORS
