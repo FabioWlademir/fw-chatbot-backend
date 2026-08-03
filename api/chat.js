@@ -16,11 +16,10 @@ Seja sempre educado e acolhedor.
 
 // 📋 LISTA DE MODELOS PARA TESTAR
 const MODELOS = [
-  "gemini-pro",
-  "gemini-1.0-pro",
-  "gemini-1.5-pro",
-  "gemini-1.0-pro-vision",
-  "gemini-1.5-flash"
+  "gemini-pro",           // ← Coloque este PRIMEIRO!
+  "gemini-1.0-pro",       // ← Depois este
+  "gemini-1.5-pro",       // ← Depois este
+  "gemini-1.5-flash"      // ← Por último (não funciona para você)
 ];
 
 module.exports = async (req, res) => {
