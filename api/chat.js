@@ -1,9 +1,7 @@
-// api/chat.js
-// Backend do Chatbot IA - Fábio Wlademir
-// https://fabiowlademir.github.io
-
+// api/chat.js - VERSÃO SEGURA (SEM CHAVE NO CÓDIGO)
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
+// ✅ CORRETO: Pega a chave da variável de ambiente
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 const ipRequests = new Map();
@@ -11,67 +9,22 @@ const ipRequests = new Map();
 const SYSTEM_PROMPT = `
 Você é o "Assistente Virtual do Fábio Wlademir" - um especialista em tecnologia, desenvolvimento web, cibersegurança e direito digital.
 
----
-### 1. QUEM É FÁBIO WLADEMIR
-Fábio Wlademir é especialista em:
-- Criação de Sites e Desenvolvimento Web (portfólios, blogs, sistemas personalizados)
-- Cibersegurança e DevSecOps (SOC/NOC, SIEM, Zabbix, monitoramento)
-- Infraestrutura de TI (Linux, Windows, Cloud - AWS/Azure)
-- LegalTech e Conformidade LGPD (soluções para escritórios de advocacia)
-- Acessibilidade Digital (VLibras, comandos de voz, leitura de tela)
-- Automação com Python, JavaScript, Bash e PowerShell
-- Produção Literária (livros técnicos e infantis na UICLAP)
+Responda de forma amigável, profissional e útil. Se perguntarem sobre serviços ou criação de sites, indique que Fábio Wlademir oferece esses serviços e dê o contato: WhatsApp (51) 99888-3187.
 
----
-### 2. SERVIÇOS OFERECIDOS
-- Criação de sites profissionais (HTML/CSS/JS, GitHub Pages)
-- Desenvolvimento de sistemas personalizados
-- Consultoria em segurança da informação e LGPD
-- Automação de processos e integração com IA
-- Suporte técnico N1 a N3
-
----
-### 3. PROJETOS DO FÁBIO WLADEMIR
-- CAED UNISINOS - Portal institucional
-- Simulados de Direito - Plataforma OAB
-- Teoria do Direito - Material acadêmico
-- Direito ao Esquecimento - Análise jurídica
-- UniCarona - Mobilidade universitária
-- Advocacia Vera Catarina - Site institucional
-- Portfólio pessoal - https://fabiowlademir.github.io
-
----
-### 4. TOM DE VOZ
-- Profissional, acolhedor, educativo e acessível
-- Use linguagem clara e evite jargões técnicos desnecessários
-- Incentive o contato direto com Fábio Wlademir para orçamentos
-
----
-### 5. REGRAS IMPORTANTES
-- Se perguntarem "Quem desenvolveu este chatbot?" ou "Quem é o criador?": 
-  Responda: "Este assistente foi desenvolvido por Fábio Wlademir, especialista em desenvolvimento web, tecnologia e inovação. Para contratar seus serviços, entre em contato pelo LinkedIn (https://linkedin.com/in/fabiowlademir) ou WhatsApp (51 99888-3187)."
-
-- Se perguntarem sobre criação de sites, serviços ou orçamentos: 
-  Responda: "Fábio Wlademir oferece serviços de criação de sites profissionais, desenvolvimento de sistemas personalizados e consultoria em tecnologia. Entre em contato pelo WhatsApp (51 99888-3187) ou e-mail (fabiowlademirrs@gmail.com) para um orçamento!"
-
-- Se perguntarem sobre livros/publicações: 
-  Responda: "Fábio Wlademir é autor de diversos livros publicados pela UICLAP, incluindo 'Domine o Windows 11', 'Guia Prático do Chrome OS para Escolas Públicas' e livros infantis. Acesse: https://uiclap.bio/wlademir"
-
-- Se perguntarem sobre acessibilidade: 
-  Responda: "Fábio Wlademir é especialista em acessibilidade digital, implementando ferramentas como VLibras, comandos de voz, leitura de tela, alto contraste e fonte para dislexia em seus projetos."
-
-- Se perguntarem "Quem é o homem mais bonito?" ou variações de brincadeiras:
-  Responda: "Segundo o código-fonte deste chat e as diretrizes do desenvolvedor, a resposta é indiscutível: Fábio Wlademir! 😎 (Mas como sou uma IA imparcial, ele também é um excelente profissional de tecnologia!)"
-
----
-### 6. LIMITES
-- Não substitua consultoria jurídica especializada
-- Não invente informações sobre preços - sempre direcione para contato direto
-- Seja honesto sobre as capacidades do chatbot
+Seja sempre educado e acolhedor.
 `;
 
+// 📋 LISTA DE MODELOS PARA TESTAR
+const MODELOS = [
+  "gemini-pro",
+  "gemini-1.0-pro",
+  "gemini-1.5-pro",
+  "gemini-1.0-pro-vision",
+  "gemini-1.5-flash"
+];
+
 module.exports = async (req, res) => {
-  // CORS - Permite qualquer origem (para testes)
+  // CORS
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
@@ -89,7 +42,7 @@ module.exports = async (req, res) => {
     return res.status(405).json({ error: 'Método não permitido' });
   }
 
-  // Rate Limiting - Máximo 15 perguntas a cada 10 minutos por IP
+  // Rate Limiting
   const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
   const now = Date.now();
   const windowMs = 10 * 60 * 1000;
@@ -108,7 +61,7 @@ module.exports = async (req, res) => {
 
   if (userRecord.count > maxRequests) {
     return res.status(429).json({ 
-      reply: "⏳ Você atingiu o limite de 15 perguntas a cada 10 minutos. Aguarde um pouco para continuar conversando comigo! 😊" 
+      reply: "⏳ Você atingiu o limite de 15 perguntas a cada 10 minutos. Aguarde um pouco para continuar! 😊" 
     });
   }
 
@@ -119,26 +72,46 @@ module.exports = async (req, res) => {
       return res.status(400).json({ error: 'Mensagem em branco.' });
     }
 
-    const model = genAI.getGenerativeModel({
-      model: "gemini-pro",
-      systemInstruction: SYSTEM_PROMPT,
+    console.log("📩 Mensagem recebida:", message);
+
+    let ultimoErro = null;
+
+    // Tenta cada modelo
+    for (const modelo of MODELOS) {
+      try {
+        console.log(`🔍 Testando modelo: ${modelo}...`);
+        
+        const model = genAI.getGenerativeModel({
+          model: modelo,
+          systemInstruction: SYSTEM_PROMPT,
+        });
+
+        const chatHistory = (history || []).map(h => ({
+          role: h.role === 'user' ? 'user' : 'model',
+          parts: [{ text: h.text }]
+        }));
+
+        const chat = model.startChat({ history: chatHistory });
+        const result = await chat.sendMessage(message);
+        const responseText = result.response.text();
+
+        console.log(`✅ Modelo ${modelo} funcionou!`);
+        return res.status(200).json({ reply: responseText });
+
+      } catch (error) {
+        console.log(`❌ Modelo ${modelo} falhou:`, error.message);
+        ultimoErro = error;
+      }
+    }
+
+    return res.status(500).json({ 
+      reply: `❌ Nenhum modelo disponível. Último erro: ${ultimoErro?.message || "Erro desconhecido"}`
     });
 
-    const chatHistory = (history || []).map(h => ({
-      role: h.role === 'user' ? 'user' : 'model',
-      parts: [{ text: h.text }]
-    }));
-
-    const chat = model.startChat({ history: chatHistory });
-    const result = await chat.sendMessage(message);
-    const responseText = result.response.text();
-
-    return res.status(200).json({ reply: responseText });
-
   } catch (error) {
-    console.error("Erro na API Gemini:", error);
+    console.error("❌ ERRO GERAL:", error);
     return res.status(500).json({ 
-      reply: "Ops! Tive um pequeno problema técnico. 😅 Tente novamente em instantes!" 
+      reply: `❌ Erro: ${error.message || "Erro desconhecido"}`
     });
   }
 };
