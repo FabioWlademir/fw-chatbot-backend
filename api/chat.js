@@ -16,9 +16,9 @@ Seja sempre educado e acolhedor.
 
 // 📋 LISTA DE MODELOS - VERSÃO 2.0
 const MODELOS = [
-  "gemini-2.5-flash",       // 🥇 Primeira opção: Modelo atual, ultra rápido e ideal para Web/Chatbots
-  "gemini-2.0-flash",       // 🥈 Segunda opção (Fallback): Muito estável para assistentes
-  "gemini-1.5-flash"        // 🥉 Terceira opção: Legado estável
+  "gemini-2.0-flash",    // ← Primeiro este (mais estável)
+  "gemini-2.5-flash",    // ← Depois este
+  "gemini-1.5-flash"     // ← Fallback
 ];
 module.exports = async (req, res) => {
   // CORS
