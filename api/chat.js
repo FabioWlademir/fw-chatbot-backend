@@ -14,12 +14,13 @@ Responda de forma amigável, profissional e útil. Se perguntarem sobre serviço
 Seja sempre educado e acolhedor.
 `;
 
-// 📋 LISTA DE MODELOS PARA TESTAR
+// 📋 LISTA DE MODELOS - VERSÃO 2.0
 const MODELOS = [
-  "gemini-pro",           // ← Coloque este PRIMEIRO!
-  "gemini-1.0-pro",       // ← Depois este
-  "gemini-1.5-pro",       // ← Depois este
-  "gemini-1.5-flash"      // ← Por último (não funciona para você)
+  "gemini-2.0-flash",    // Primeiro: o mais novo!
+  "gemini-2.0-pro",      // Segundo: versão Pro
+  "gemini-1.5-pro",      // Terceiro: fallback estável
+  "gemini-1.5-flash",    // Quarto: fallback rápido
+  "gemini-pro",          // Último: fallback antigo
 ];
 
 module.exports = async (req, res) => {
