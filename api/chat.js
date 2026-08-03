@@ -16,12 +16,9 @@ Seja sempre educado e acolhedor.
 
 // 📋 LISTA DE MODELOS - VERSÃO 2.0
 const MODELOS = [
-  "gemini-2.0-flash",    // Primeiro: o mais novo!
-  "gemini-2.0-pro",      // Segundo: versão Pro
-  "gemini-1.5-pro",      // Terceiro: fallback estável
-  "gemini-1.5-flash",    // Quarto: fallback rápido
-  "gemini-pro",          // Último: fallback antigo
-];
+  "gemini-2.5-flash",       // 🥇 Primeira opção: Modelo atual, ultra rápido e ideal para Web/Chatbots
+  "gemini-2.0-flash",       // 🥈 Segunda opção (Fallback): Muito estável para assistentes
+  "gemini-1.5-flash"        // 🥉 Terceira opção: Legado estável
 
 module.exports = async (req, res) => {
   // CORS
