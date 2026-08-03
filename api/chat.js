@@ -1,8 +1,9 @@
-// api/chat.js - VERSÃO SEGURA (SEM CHAVE NO CÓDIGO)
+// api/chat.js - VERSÃO CORRETA COM DUAS CHAVES
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-// ✅ CORRETO: Pega a chave da variável de ambiente
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+// 🔑 Duas chaves de projetos DIFERENTES (cotas separadas!)
+const genAI1 = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const genAI2 = new GoogleGenerativeAI(process.env.GEMINI_API_KEY_RESERVA);
 
 const ipRequests = new Map();
 
@@ -20,6 +21,7 @@ const MODELOS = [
   "gemini-2.0-flash-lite",  // 🥈 Fallback: cota SEPARADA do principal!
   "gemini-1.5-pro",         // 🥉 Terceiro: mais inteligente (mais lento)
 ];
+
 module.exports = async (req, res) => {
   // CORS
   res.setHeader('Access-Control-Allow-Credentials', true);
@@ -73,12 +75,13 @@ module.exports = async (req, res) => {
 
     let ultimoErro = null;
 
-    // Tenta cada modelo
+    // Tenta cada modelo com fallback de chave
     for (const modelo of MODELOS) {
+      // 🥇 Primeiro tenta com a chave 1
       try {
-        console.log(`🔍 Testando modelo: ${modelo}...`);
+        console.log(`🔍 Chave 1 - Testando modelo: ${modelo}...`);
         
-        const model = genAI.getGenerativeModel({
+        const model = genAI1.getGenerativeModel({
           model: modelo,
           systemInstruction: SYSTEM_PROMPT,
         });
@@ -92,12 +95,42 @@ module.exports = async (req, res) => {
         const result = await chat.sendMessage(message);
         const responseText = result.response.text();
 
-        console.log(`✅ Modelo ${modelo} funcionou!`);
+        console.log(`✅ Chave 1 - Modelo ${modelo} funcionou!`);
         return res.status(200).json({ reply: responseText });
 
       } catch (error) {
-        console.log(`❌ Modelo ${modelo} falhou:`, error.message);
-        ultimoErro = error;
+        // Se erro de quota (429), tenta com a chave 2
+        if (error.message && error.message.includes('429')) {
+          console.log(`🔄 Chave 1 - Modelo ${modelo} sem cota, tentando chave 2...`);
+          
+          try {
+            console.log(`🔍 Chave 2 - Testando modelo: ${modelo}...`);
+            
+            const model2 = genAI2.getGenerativeModel({
+              model: modelo,
+              systemInstruction: SYSTEM_PROMPT,
+            });
+
+            const chatHistory2 = (history || []).map(h => ({
+              role: h.role === 'user' ? 'user' : 'model',
+              parts: [{ text: h.text }]
+            }));
+
+            const chat2 = model2.startChat({ history: chatHistory2 });
+            const result2 = await chat2.sendMessage(message);
+            const responseText2 = result2.response.text();
+
+            console.log(`✅ Chave 2 - Modelo ${modelo} funcionou!`);
+            return res.status(200).json({ reply: responseText2 });
+
+          } catch (error2) {
+            console.log(`❌ Chave 2 - Modelo ${modelo} falhou:`, error2.message);
+            ultimoErro = error2;
+          }
+        } else {
+          console.log(`❌ Modelo ${modelo} falhou:`, error.message);
+          ultimoErro = error;
+        }
       }
     }
 
