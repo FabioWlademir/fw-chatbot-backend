@@ -1,11 +1,6 @@
-// api/chat.js - VERSÃO CORRETA COM DUAS CHAVES
-const { GoogleGenerativeAI } = require("@google/generative-ai");
-
-// 🔑 Duas chaves de projetos DIFERENTES (cotas separadas!)
-const genAI1 = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const genAI2 = new GoogleGenerativeAI(process.env.GEMINI_API_KEY_RESERVA);
-
-const ipRequests = new Map();
+// api/chat.js - VERSÃO COM GROQ
+const GROQ_API_KEY = process.env.GROQ_API_KEY;
+const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 
 const SYSTEM_PROMPT = `
 Você é o "Assistente Virtual do Fábio Wlademir" - um especialista em tecnologia, desenvolvimento web, cibersegurança e direito digital.
@@ -15,12 +10,7 @@ Responda de forma amigável, profissional e útil. Se perguntarem sobre serviço
 Seja sempre educado e acolhedor.
 `;
 
-// 📋 LISTA DE MODELOS - ESTRATÉGIA DE COTA SEPARADA
-const MODELOS = [
-  "gemini-2.0-flash",       // 🥇 Principal: rápido e inteligente
-  "gemini-2.0-flash-lite",  // 🥈 Fallback: cota SEPARADA do principal!
-  "gemini-1.5-pro",         // 🥉 Terceiro: mais inteligente (mais lento)
-];
+const ipRequests = new Map();
 
 module.exports = async (req, res) => {
   // CORS
@@ -41,7 +31,7 @@ module.exports = async (req, res) => {
     return res.status(405).json({ error: 'Método não permitido' });
   }
 
-  // Rate Limiting
+  // Rate Limiting (proteção contra abuso)
   const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
   const now = Date.now();
   const windowMs = 10 * 60 * 1000;
@@ -73,70 +63,42 @@ module.exports = async (req, res) => {
 
     console.log("📩 Mensagem recebida:", message);
 
-    let ultimoErro = null;
+    // Prepara o histórico para a Groq (formato OpenAI)
+    const messages = [
+      { role: 'system', content: SYSTEM_PROMPT },
+      ...(history || []).map(msg => ({
+        role: msg.role === 'user' ? 'user' : 'assistant',
+        content: msg.text
+      })),
+      { role: 'user', content: message }
+    ];
 
-    // Tenta cada modelo com fallback de chave
-    for (const modelo of MODELOS) {
-      // 🥇 Primeiro tenta com a chave 1
-      try {
-        console.log(`🔍 Chave 1 - Testando modelo: ${modelo}...`);
-        
-        const model = genAI1.getGenerativeModel({
-          model: modelo,
-          systemInstruction: SYSTEM_PROMPT,
-        });
+    console.log("🔄 Chamando a Groq API...");
 
-        const chatHistory = (history || []).map(h => ({
-          role: h.role === 'user' ? 'user' : 'model',
-          parts: [{ text: h.text }]
-        }));
+    const response = await fetch(GROQ_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${GROQ_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: "llama-3.3-70b-versatile", // Modelo principal
+        messages: messages,
+        temperature: 0.7,
+        max_tokens: 1024,
+      })
+    });
 
-        const chat = model.startChat({ history: chatHistory });
-        const result = await chat.sendMessage(message);
-        const responseText = result.response.text();
-
-        console.log(`✅ Chave 1 - Modelo ${modelo} funcionou!`);
-        return res.status(200).json({ reply: responseText });
-
-      } catch (error) {
-        // Se erro de quota (429), tenta com a chave 2
-        if (error.message && error.message.includes('429')) {
-          console.log(`🔄 Chave 1 - Modelo ${modelo} sem cota, tentando chave 2...`);
-          
-          try {
-            console.log(`🔍 Chave 2 - Testando modelo: ${modelo}...`);
-            
-            const model2 = genAI2.getGenerativeModel({
-              model: modelo,
-              systemInstruction: SYSTEM_PROMPT,
-            });
-
-            const chatHistory2 = (history || []).map(h => ({
-              role: h.role === 'user' ? 'user' : 'model',
-              parts: [{ text: h.text }]
-            }));
-
-            const chat2 = model2.startChat({ history: chatHistory2 });
-            const result2 = await chat2.sendMessage(message);
-            const responseText2 = result2.response.text();
-
-            console.log(`✅ Chave 2 - Modelo ${modelo} funcionou!`);
-            return res.status(200).json({ reply: responseText2 });
-
-          } catch (error2) {
-            console.log(`❌ Chave 2 - Modelo ${modelo} falhou:`, error2.message);
-            ultimoErro = error2;
-          }
-        } else {
-          console.log(`❌ Modelo ${modelo} falhou:`, error.message);
-          ultimoErro = error;
-        }
-      }
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`Groq API error: ${response.status} - ${errorData.error?.message || 'Unknown error'}`);
     }
 
-    return res.status(500).json({ 
-      reply: `❌ Nenhum modelo disponível. Último erro: ${ultimoErro?.message || "Erro desconhecido"}`
-    });
+    const data = await response.json();
+    const reply = data.choices?.[0]?.message?.content || "Desculpe, não consegui gerar uma resposta.";
+
+    console.log("✅ Resposta gerada com sucesso!");
+    return res.status(200).json({ reply });
 
   } catch (error) {
     console.error("❌ ERRO GERAL:", error);
