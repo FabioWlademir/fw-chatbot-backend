@@ -16,8 +16,9 @@ Seja sempre educado e acolhedor.
 
 // 📋 LISTA DE MODELOS - ESTRATÉGIA DE COTA SEPARADA
 const MODELOS = [
-  "gemini-2.0-flash",       // 🥇 1ª Opção: Principal, rápido e inteligente
-  "gemini-2.0-flash-lite"   // 🥈 2ª Opção (Fallback): Usa um "balde" de cota separado!
+  "gemini-2.0-flash",       // 🥇 Principal: rápido e inteligente
+  "gemini-2.0-flash-lite",  // 🥈 Fallback: cota SEPARADA do principal!
+  "gemini-1.5-pro",         // 🥉 Terceiro: mais inteligente (mais lento)
 ];
 module.exports = async (req, res) => {
   // CORS
